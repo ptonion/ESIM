@@ -15,8 +15,9 @@ interface Plan {
 async function getPlans(iso2: string, q?: string): Promise<Plan[]> {
   const params = new URLSearchParams({ country: iso2 });
   if (q) params.set("q", q);
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "";
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL}/api/plans?${params.toString()}`,
+    `${baseUrl}/api/plans?${params.toString()}`,
     {
       cache: "no-store",
     }

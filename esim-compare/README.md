@@ -16,6 +16,14 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Environment Variables
+
+This project uses `NEXT_PUBLIC_BASE_URL` to specify the host that serves country-specific data. Define it in your `.env` file or deployment settings. When left unset, the app falls back to relative API paths.
+
+```
+NEXT_PUBLIC_BASE_URL=https://example.com
+```
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
