@@ -1,7 +1,6 @@
 import { chromium } from "playwright";
 import * as cheerio from "cheerio";
-import { PrismaClient } from "@prisma/client";
-const prisma = new PrismaClient();
+import prisma from "../src/lib/prisma";
 
 (async () => {
   const browser = await chromium.launch();
