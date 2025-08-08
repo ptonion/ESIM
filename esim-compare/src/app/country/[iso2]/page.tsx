@@ -12,20 +12,48 @@ interface Plan {
   purchaseUrl: string;
 }
 
-async function getPlans(iso2: string): Promise<Plan[]> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/plans?country=${iso2}`, {
-    cache: "no-store",
-  });
+async function getPlans(iso2: string, q?: string): Promise<Plan[]> {
+  const params = new URLSearchParams({ country: iso2 });
+  if (q) params.set("q", q);
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_BASE_URL}/api/plans?${params.toString()}`,
+    {
+      cache: "no-store",
+    }
+  );
   if (!res.ok) return [];
   return res.json();
 }
 
-export default async function CountryPage({ params }: { params: { iso2: string } }) {
-  const plans = await getPlans(params.iso2.toUpperCase());
+export default async function CountryPage({
+  params,
+  searchParams,
+}: {
+  params: { iso2: string };
+  searchParams: { q?: string };
+}) {
+  const q = searchParams.q ?? "";
+  const plans = await getPlans(params.iso2.toUpperCase(), q);
 
   return (
     <main className="max-w-5xl mx-auto p-6">
       <h1 className="text-2xl font-semibold mb-4">Best eSIM plans for {params.iso2.toUpperCase()}</h1>
+
+      <form className="mb-4">
+        <input
+          type="text"
+          name="q"
+          placeholder="Search plans"
+          defaultValue={q}
+          className="border px-2 py-1 rounded-md mr-2 bg-background text-foreground"
+        />
+        <button
+          type="submit"
+          className="px-3 py-1 border rounded-md"
+        >
+          Search
+        </button>
+      </form>
 
       {plans.length === 0 ? (
         <p>No plans yet. Check back soon.</p>

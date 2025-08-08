@@ -7,6 +7,7 @@ type SortKey = typeof ALLOWED_SORT_KEYS[number];
 export async function GET(req: NextRequest) {
   const country = req.nextUrl.searchParams.get("country"); // e.g., "LT"
   const sortParam = req.nextUrl.searchParams.get("sort");
+  const q = req.nextUrl.searchParams.get("q");
   const sort: SortKey = sortParam && ALLOWED_SORT_KEYS.includes(sortParam as SortKey)
     ? (sortParam as SortKey)
     : "pricePerGBUsd";
@@ -16,7 +17,17 @@ export async function GET(req: NextRequest) {
   }
 
   const plans = await prisma.plan.findMany({
-    where: { coverage: { some: { countryId: country } } },
+    where: {
+      coverage: { some: { countryId: country } },
+      ...(q
+        ? {
+            OR: [
+              { name: { contains: q, mode: "insensitive" } },
+              { provider: { name: { contains: q, mode: "insensitive" } } },
+            ],
+          }
+        : {}),
+    },
     include: { provider: true },
     orderBy: { [sort]: "asc" as const }
   });
