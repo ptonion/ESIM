@@ -42,3 +42,13 @@ Supports **real-time scraping** from multiple providers, affiliate tracking, and
 
 ## 📂 Project Structure
 
+**Directory Layout**
+- `apps/frontend` – Next.js UI
+- `apps/api` – API or scraping service
+- `packages/lib` – shared utilities and types
+
+**Conventions**
+- Use `kebab-case` for file and directory names.
+- Apps only depend on packages; avoid cross-app imports.
+- Expose each package's public API from `src/index.ts`.
+
