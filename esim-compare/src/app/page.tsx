@@ -1,14 +1,31 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
-const countries = [
-  { iso2: "LT", name: "Lithuania" },
-  { iso2: "JP", name: "Japan" },
-];
+type Country = {
+  iso2: string;
+  name: string;
+};
 
 export default function Home() {
   const router = useRouter();
+  const [countries, setCountries] = useState<Country[]>([]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetch("/api/countries");
+        if (res.ok) {
+          const data = await res.json();
+          setCountries(data);
+        }
+      } catch (err) {
+        console.error("Failed to load countries", err);
+      }
+    };
+    load();
+  }, []);
 
   const handleChange = (iso2: string) => {
     if (iso2) {
