@@ -5,6 +5,10 @@ async function main() {
   const countries = [
     { iso2: "LT", name: "Lithuania", region: "Europe" },
     { iso2: "JP", name: "Japan", region: "Asia" },
+    { iso2: "US", name: "United States", region: "Americas" },
+    { iso2: "GB", name: "United Kingdom", region: "Europe" },
+    { iso2: "DE", name: "Germany", region: "Europe" },
+    { iso2: "FR", name: "France", region: "Europe" },
   ];
 
   for (const c of countries) {
