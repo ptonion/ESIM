@@ -56,3 +56,19 @@ Supports **real-time scraping** from multiple providers, affiliate tracking, and
 
 - `NEXT_PUBLIC_BASE_URL` – Host serving country-specific data. When unset, the frontend relies on relative API paths.
 
+## Data Refresh Workflow
+
+Seeding base data and refreshing provider plans is done from the `esim-compare` app.
+
+```bash
+cd esim-compare
+pnpm seed                # countries and providers
+pnpm scrape:airalo       # refresh Airalo plans
+pnpm scrape:holafly      # refresh Holafly plans
+pnpm scrape:nomad        # refresh Nomad plans
+# or run all at once
+pnpm scrape:all
+```
+
+Each scraper writes plan details and country coverage using Prisma's `plan` and `planCountry` models.
+

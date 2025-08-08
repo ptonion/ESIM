@@ -11,6 +11,10 @@
     "start": "next start",
     "lint": "next lint",
     "seed": "tsx prisma/seed.ts",
+    "scrape:airalo": "tsx scripts/scrape-airalo.ts",
+    "scrape:holafly": "tsx scripts/scrape-holafly.ts",
+    "scrape:nomad": "tsx scripts/scrape-nomad.ts",
+    "scrape:all": "pnpm scrape:airalo && pnpm scrape:holafly && pnpm scrape:nomad",
     "test": "playwright test"
   },
   "dependencies": {
