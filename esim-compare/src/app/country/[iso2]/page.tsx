@@ -73,17 +73,17 @@ export default async function CountryPage({
               </tr>
             </thead>
             <tbody>
-              {plans.map((p: Plan) => (
-                <tr key={p.id} className="border-b">
-                  <td className="py-2 pr-4">{p.provider}</td>
-                  <td className="py-2 pr-4">{p.name}</td>
-                  <td className="py-2 pr-4">{p.dataGB} GB</td>
-                  <td className="py-2 pr-4">{p.validityDays} days</td>
-                  <td className="py-2 pr-4">${p.priceUsd.toFixed(2)}</td>
-                  <td className="py-2 pr-4">${p.pricePerGBUsd.toFixed(2)}</td>
-                  <td className="py-2 pr-4">{p.hotspotAllowed ? "Yes" : "—"}</td>
+              {plans.map((plan: Plan) => (
+                <tr key={plan.id} className="border-b">
+                  <td className="py-2 pr-4">{plan.provider}</td>
+                  <td className="py-2 pr-4">{plan.name}</td>
+                  <td className="py-2 pr-4">{plan.dataGB} GB</td>
+                  <td className="py-2 pr-4">{plan.validityDays} days</td>
+                  <td className="py-2 pr-4">${plan.priceUsd.toFixed(2)}</td>
+                  <td className="py-2 pr-4">${plan.pricePerGBUsd.toFixed(2)}</td>
+                  <td className="py-2 pr-4">{plan.hotspotAllowed ? "Yes" : "—"}</td>
                   <td className="py-2 pr-4">
-                    <Link href={p.purchaseUrl} className="underline" target="_blank">Buy</Link>
+                    <Link href={plan.purchaseUrl} className="underline" target="_blank">Buy</Link>
                   </td>
                 </tr>
               ))}
