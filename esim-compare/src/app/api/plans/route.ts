@@ -32,7 +32,8 @@ export async function GET(req: NextRequest) {
     orderBy: { [sort]: "asc" as const }
   });
 
-  return NextResponse.json(plans.map(p => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return NextResponse.json(plans.map((p: any) => ({
     id: p.id,
     provider: p.provider.name,
     name: p.name,

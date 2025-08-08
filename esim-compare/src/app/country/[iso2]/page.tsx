@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 
 interface Plan {
@@ -30,15 +32,16 @@ export default async function CountryPage({
   params,
   searchParams,
 }: {
-  params: { iso2: string };
-  searchParams: { q?: string };
+  params: Promise<{ iso2: string }>;
+  searchParams: Promise<{ q?: string }>;
 }) {
-  const q = searchParams.q ?? "";
-  const plans = await getPlans(params.iso2.toUpperCase(), q);
+  const { iso2 } = await params;
+  const { q = "" } = await searchParams;
+  const plans = await getPlans(iso2.toUpperCase(), q);
 
   return (
     <main className="max-w-5xl mx-auto p-6">
-      <h1 className="text-2xl font-semibold mb-4">Best eSIM plans for {params.iso2.toUpperCase()}</h1>
+      <h1 className="text-2xl font-semibold mb-4">Best eSIM plans for {iso2.toUpperCase()}</h1>
 
       <form className="mb-4">
         <input
