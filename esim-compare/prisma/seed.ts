@@ -19,16 +19,23 @@ async function main() {
     });
   }
 
-  // ✅ Seed Airalo so scraper works
-  const provider = await prisma.provider.upsert({
-    where: { slug: "airalo" },
-    update: {},
-    create: {
-      name: "Airalo",
-      slug: "airalo",
-      siteUrl: "https://www.airalo.com",
-    },
-  });
+  // ✅ Seed providers so scrapers work
+  const providers = [
+    { name: "Airalo", slug: "airalo", siteUrl: "https://www.airalo.com" },
+    { name: "Holafly", slug: "holafly", siteUrl: "https://www.holafly.com" },
+    { name: "Nomad", slug: "nomad", siteUrl: "https://getnomad.app" },
+  ];
+
+  for (const p of providers) {
+    await prisma.provider.upsert({
+      where: { slug: p.slug },
+      update: {},
+      create: p,
+    });
+  }
+
+  const provider = await prisma.provider.findUnique({ where: { slug: "airalo" } });
+  if (!provider) throw new Error("Airalo provider missing after seed");
 
   // clear existing plans
   await prisma.planCountry.deleteMany();
