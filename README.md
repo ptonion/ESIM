@@ -52,3 +52,7 @@ Supports **real-time scraping** from multiple providers, affiliate tracking, and
 - Apps only depend on packages; avoid cross-app imports.
 - Expose each package's public API from `src/index.ts`.
 
+## Environment Variables
+
+- `NEXT_PUBLIC_BASE_URL` – Host serving country-specific data. When unset, the frontend relies on relative API paths.
+
