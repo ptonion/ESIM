@@ -5,8 +5,6 @@ datasource db {
 
 generator client {
   provider = "prisma-client-js"
-  // put the generated client where the stub looks:
-  output   = "../node_modules/.prisma/client"
 }
 // 3️⃣ Models — your tables
 model Country {
