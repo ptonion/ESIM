@@ -1,0 +1,59 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+  // put the generated client where the stub looks:
+  output   = "../node_modules/.prisma/client"
+}
+// 3️⃣ Models — your tables
+model Country {
+  iso2   String        @id
+  name   String
+  region String?
+  plans  PlanCountry[]
+}
+
+model Provider {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  slug      String   @unique
+  siteUrl   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  plans     Plan[]
+}
+
+model Plan {
+  id              String       @id @default(cuid())
+  providerId      String
+  provider        Provider     @relation(fields: [providerId], references: [id])
+  slug            String       @unique
+  name            String
+  dataAllowanceMB Int
+  validityDays    Int
+  priceAmount     Decimal
+  priceCurrency   String
+  priceUsd        Decimal
+  pricePerGBUsd   Decimal
+  hotspotAllowed  Boolean?
+  speedCapMbps    Int?
+  roamingRegion   String?
+  purchaseUrl     String
+  affiliateLink   String?
+  lastCheckedAt   DateTime     @default(now())
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  coverage        PlanCountry[]
+}
+
+model PlanCountry {
+  planId    String
+  countryId String
+  plan      Plan    @relation(fields: [planId], references: [id])
+  country   Country @relation(fields: [countryId], references: [iso2])
+
+  @@id([planId, countryId])
+}
