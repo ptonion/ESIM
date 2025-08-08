@@ -1,59 +1,102 @@
 import { chromium } from "playwright";
 import * as cheerio from "cheerio";
+import slugify from "slugify";
 import prisma from "../src/lib/prisma";
 
 (async () => {
-  const browser = await chromium.launch();
-  const page = await browser.newPage({ userAgent: "esim-compare-bot/1.0 (+contact@example.com)" });
-  await page.goto("https://www.airalo.com/global-esim", { waitUntil: "networkidle" });
-  const html = await page.content();
-  await browser.close();
-
-  const $ = cheerio.load(html);
-  // TODO: adjust selectors to Airalo’s DOM
-  const parsed = [{
-    providerSlug: "airalo",
-    name: "Discover Global 10GB",
-    dataMB: 10240, validityDays: 30,
-    priceAmount: 24.99, priceCurrency: "USD",
-    hotspotAllowed: true, speedCapMbps: 50,
-    purchaseUrl: "https://www.airalo.com/global-esim",
-    countries: ["LT","JP"]
-  }];
-
-  const provider = await prisma.provider.findUnique({ where: { slug: "airalo" }});
-  if (!provider) throw new Error("Provider not seeded.");
-
-  for (const p of parsed) {
-    const slug = `airalo-discover-global-10gb-30d`;
-    const plan = await prisma.plan.upsert({
-      where: { slug },
-      update: {
-        priceAmount: p.priceAmount,
-        priceCurrency: p.priceCurrency,
-        priceUsd: p.priceAmount,
-        pricePerGBUsd: p.priceAmount / (p.dataMB/1024),
-        lastCheckedAt: new Date()
-      },
-      create: {
-        providerId: provider.id, slug, name: p.name,
-        dataAllowanceMB: p.dataMB, validityDays: p.validityDays,
-        priceAmount: p.priceAmount, priceCurrency: p.priceCurrency,
-        priceUsd: p.priceAmount, pricePerGBUsd: p.priceAmount / (p.dataMB/1024),
-        hotspotAllowed: p.hotspotAllowed, speedCapMbps: p.speedCapMbps,
-        roamingRegion: "Global", purchaseUrl: p.purchaseUrl
-      }
+  let browser;
+  try {
+    browser = await chromium.launch();
+    const context = await browser.newContext({
+      userAgent: "esim-compare-bot/1.0 (+contact@example.com)",
+      ignoreHTTPSErrors: true,
     });
+    const page = await context.newPage();
+    await page.goto("https://www.airalo.com/global-esim", { waitUntil: "networkidle" });
+    const html = await page.content();
 
-    for (const iso of p.countries) {
-      await prisma.planCountry.upsert({
-        where: { planId_countryId: { planId: plan.id, countryId: iso }},
-        update: {},
-        create: { planId: plan.id, countryId: iso }
-      });
+    const $ = cheerio.load(html);
+    let nuxtScript: string | undefined;
+    $("script").each((_, el) => {
+      const content = $(el).html();
+      if (content && content.includes("__NUXT__=")) nuxtScript = content;
+    });
+    if (!nuxtScript) throw new Error("Airalo data script not found");
+    // evaluate nuxt data
+    const window: any = {};
+    globalThis.window = window;
+    eval(nuxtScript);
+    const nuxt = window.__NUXT__;
+    const fetchKey = Object.keys(nuxt.fetch).find((k) => nuxt.fetch[k].packages);
+    if (!fetchKey) throw new Error("Airalo packages not found");
+    const packages = nuxt.fetch[fetchKey].packages as any[];
+
+    const parsed = packages.map((pkg) => ({
+      providerSlug: "airalo",
+      name: `${pkg.operator.title} ${pkg.title}`.trim(),
+      dataMB: pkg.amount,
+      validityDays: pkg.day,
+      priceAmount: parseFloat(pkg.price.amount),
+      priceCurrency: pkg.price.currency.code,
+      hotspotAllowed: true,
+      speedCapMbps: null,
+      purchaseUrl: `https://www.airalo.com/global-esim/${pkg.slug}`,
+      countries: pkg.operator.countries.map((c: any) => c.slug.toUpperCase()),
+      slug: slugify(`airalo-${pkg.slug}`, { lower: true }),
+    }));
+
+    const provider = await prisma.provider.findUnique({ where: { slug: "airalo" } });
+    if (!provider) throw new Error("Provider not seeded.");
+
+    for (const p of parsed) {
+      try {
+        const plan = await prisma.plan.upsert({
+          where: { slug: p.slug },
+          update: {
+            priceAmount: p.priceAmount,
+            priceCurrency: p.priceCurrency,
+            priceUsd: p.priceAmount,
+            pricePerGBUsd: p.priceAmount / (p.dataMB / 1024),
+            lastCheckedAt: new Date(),
+          },
+          create: {
+            providerId: provider.id,
+            slug: p.slug,
+            name: p.name,
+            dataAllowanceMB: p.dataMB,
+            validityDays: p.validityDays,
+            priceAmount: p.priceAmount,
+            priceCurrency: p.priceCurrency,
+            priceUsd: p.priceAmount,
+            pricePerGBUsd: p.priceAmount / (p.dataMB / 1024),
+            hotspotAllowed: p.hotspotAllowed,
+            speedCapMbps: p.speedCapMbps,
+            roamingRegion: "Global",
+            purchaseUrl: p.purchaseUrl,
+          },
+        });
+
+        for (const iso of p.countries) {
+          try {
+            await prisma.planCountry.upsert({
+              where: { planId_countryId: { planId: plan.id, countryId: iso } },
+              update: {},
+              create: { planId: plan.id, countryId: iso },
+            });
+          } catch (err) {
+            console.error(`Failed to upsert country ${iso} for plan ${p.name}:`, err);
+          }
+        }
+      } catch (err) {
+        console.error(`Failed to upsert plan ${p.name}:`, err);
+      }
     }
-  }
 
-  console.log("Scraped Airalo (stub).");
-  await prisma.$disconnect();
+    console.log(`Scraped Airalo: ${parsed.length} plans.`);
+  } catch (err) {
+    console.error("Error scraping Airalo:", err);
+  } finally {
+    await browser?.close();
+    await prisma.$disconnect();
+  }
 })();
