@@ -1,12 +1,26 @@
 import Link from "next/link";
 
-async function getPlans(iso2: string) {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/plans?country=${iso2}`, { cache: "no-store" });
+interface Plan {
+  id: string;
+  provider: string;
+  name: string;
+  dataGB: number;
+  validityDays: number;
+  priceUsd: number;
+  pricePerGBUsd: number;
+  hotspotAllowed: boolean;
+  purchaseUrl: string;
+}
+
+async function getPlans(iso2: string): Promise<Plan[]> {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/plans?country=${iso2}`, {
+    cache: "no-store",
+  });
   if (!res.ok) return [];
   return res.json();
 }
 
-export default async function CountryPage({ params }: { params: { iso2: string }}) {
+export default async function CountryPage({ params }: { params: { iso2: string } }) {
   const plans = await getPlans(params.iso2.toUpperCase());
 
   return (
@@ -31,7 +45,7 @@ export default async function CountryPage({ params }: { params: { iso2: string }
               </tr>
             </thead>
             <tbody>
-              {plans.map((p: any) => (
+              {plans.map((p: Plan) => (
                 <tr key={p.id} className="border-b">
                   <td className="py-2 pr-4">{p.provider}</td>
                   <td className="py-2 pr-4">{p.name}</td>
