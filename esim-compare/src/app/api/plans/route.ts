@@ -1,10 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
+const ALLOWED_SORT_KEYS = ["pricePerGBUsd", "priceUsd", "validityDays"] as const;
+type SortKey = typeof ALLOWED_SORT_KEYS[number];
+
 export async function GET(req: NextRequest) {
   const country = req.nextUrl.searchParams.get("country"); // e.g., "LT"
-  const sort = req.nextUrl.searchParams.get("sort") ?? "pricePerGBUsd";
+  const sortParam = req.nextUrl.searchParams.get("sort");
+  const sort: SortKey = sortParam && ALLOWED_SORT_KEYS.includes(sortParam as SortKey)
+    ? (sortParam as SortKey)
+    : "pricePerGBUsd";
   if (!country) return NextResponse.json({ error: "country required" }, { status: 400 });
+  if (sortParam && !ALLOWED_SORT_KEYS.includes(sortParam as SortKey)) {
+    return NextResponse.json({ error: "unsupported sort key" }, { status: 400 });
+  }
 
   const plans = await prisma.plan.findMany({
     where: { coverage: { some: { countryId: country } } },
