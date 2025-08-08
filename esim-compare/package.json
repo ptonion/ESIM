@@ -10,7 +10,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts",
+    "test": "playwright test"
   },
   "dependencies": {
     "@prisma/client": "^6.13.0",
@@ -27,6 +28,7 @@
     "zod": "^4.0.15"
   },
   "devDependencies": {
+    "@playwright/test": "^1.54.2",
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
