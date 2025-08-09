@@ -1,7 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import PlanTable, { Plan } from "@/components/PlanTable";
 
 type Country = {
   iso2: string;
@@ -9,8 +9,10 @@ type Country = {
 };
 
 export default function Home() {
-  const router = useRouter();
   const [countries, setCountries] = useState<Country[]>([]);
+  const [selectedCountry, setSelectedCountry] = useState("");
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -27,9 +29,25 @@ export default function Home() {
     load();
   }, []);
 
-  const handleChange = (iso2: string) => {
-    if (iso2) {
-      router.push(`/country/${iso2}`);
+  const handleChange = async (iso2: string) => {
+    setSelectedCountry(iso2);
+    if (!iso2) {
+      setPlans([]);
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/plans?country=${iso2}`, { cache: "no-store" });
+      if (res.ok) {
+        setPlans(await res.json());
+      } else {
+        setPlans([]);
+      }
+    } catch (err) {
+      console.error("Failed to load plans", err);
+      setPlans([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -52,6 +70,16 @@ export default function Home() {
           </option>
         ))}
       </select>
+      {loading && <p className="mt-4">Loading...</p>}
+      {!loading && selectedCountry && (
+        plans.length === 0 ? (
+          <p className="mt-4">No plans yet. Check back soon.</p>
+        ) : (
+          <div className="mt-4 w-full max-w-5xl">
+            <PlanTable plans={plans} />
+          </div>
+        )
+      )}
     </main>
   );
 }
