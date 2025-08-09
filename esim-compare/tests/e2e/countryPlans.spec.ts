@@ -110,3 +110,19 @@ test("country pages show different plans", async ({ page }) => {
 
   expect(jpRows).not.toEqual(ltRows);
 });
+
+test("multi-country list groups plans", async ({ page }) => {
+  await page.goto("/countries?list=JP,LT");
+  const sections = page.locator("section");
+  const jpSection = sections.filter({ hasText: "Best eSIM plans for JP" });
+  const ltSection = sections.filter({ hasText: "Best eSIM plans for LT" });
+
+  const jpRows = await jpSection.locator("tbody tr").allTextContents();
+  const ltRows = await ltSection.locator("tbody tr").allTextContents();
+
+  expect(jpRows.some((r) => r.includes("JP Basic"))).toBeTruthy();
+  expect(jpRows.some((r) => r.includes("LT Basic"))).toBeFalsy();
+  expect(ltRows.some((r) => r.includes("LT Basic"))).toBeTruthy();
+  expect(ltRows.some((r) => r.includes("JP Basic"))).toBeFalsy();
+});
+
