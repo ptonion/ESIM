@@ -1,7 +1,27 @@
 import { chromium } from "playwright";
 import * as cheerio from "cheerio";
+import vm from "vm";
 import slugify from "slugify";
 import prisma from "../src/lib/prisma";
+
+interface AiraloCountry {
+  slug: string;
+}
+
+interface AiraloPackage {
+  operator: {
+    title: string;
+    countries: AiraloCountry[];
+  };
+  title: string;
+  amount: number;
+  day: number;
+  price: {
+    amount: string;
+    currency: { code: string };
+  };
+  slug: string;
+}
 
 (async () => {
   let browser;
@@ -22,14 +42,15 @@ import prisma from "../src/lib/prisma";
       if (content && content.includes("__NUXT__=")) nuxtScript = content;
     });
     if (!nuxtScript) throw new Error("Airalo data script not found");
-    // evaluate nuxt data
-    const window: any = {};
-    globalThis.window = window;
-    eval(nuxtScript);
-    const nuxt = window.__NUXT__;
+    // evaluate nuxt data in a sandbox
+    const sandbox: {
+      window: { __NUXT__?: { fetch: Record<string, { packages: AiraloPackage[] }> } };
+    } = { window: {} };
+    vm.runInNewContext(nuxtScript, sandbox);
+    const nuxt = sandbox.window.__NUXT__;
     const fetchKey = Object.keys(nuxt.fetch).find((k) => nuxt.fetch[k].packages);
     if (!fetchKey) throw new Error("Airalo packages not found");
-    const packages = nuxt.fetch[fetchKey].packages as any[];
+    const packages: AiraloPackage[] = nuxt.fetch[fetchKey].packages;
 
     const parsed = packages.map((pkg) => ({
       providerSlug: "airalo",
@@ -41,7 +62,7 @@ import prisma from "../src/lib/prisma";
       hotspotAllowed: true,
       speedCapMbps: null,
       purchaseUrl: `https://www.airalo.com/global-esim/${pkg.slug}`,
-      countries: pkg.operator.countries.map((c: any) => c.slug.toUpperCase()),
+      countries: pkg.operator.countries.map((c) => c.slug.toUpperCase()),
       slug: slugify(`airalo-${pkg.slug}`, { lower: true }),
     }));
 

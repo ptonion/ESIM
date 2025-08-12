@@ -3,6 +3,25 @@ import * as cheerio from "cheerio";
 import slugify from "slugify";
 import prisma from "../src/lib/prisma";
 
+interface HolaflyCountry {
+  iso2?: string;
+}
+
+interface HolaflyProduct {
+  name: string;
+  data_mb?: number;
+  dataAllowanceMB?: number;
+  validity_days?: number;
+  validityDays?: number;
+  price?: string;
+  priceAmount?: string;
+  currency?: string;
+  hotspotAllowed?: boolean;
+  speedCapMbps?: number | null;
+  slug?: string;
+  countries?: HolaflyCountry[];
+}
+
 (async () => {
   let browser;
   try {
@@ -19,9 +38,9 @@ import prisma from "../src/lib/prisma";
     const dataScript = $("#__NEXT_DATA__").html();
     if (!dataScript) throw new Error("Holafly data script not found");
     const nextData = JSON.parse(dataScript);
-    const products = nextData?.props?.pageProps?.products || [];
+    const products: HolaflyProduct[] = nextData?.props?.pageProps?.products || [];
 
-    const parsed = products.map((pkg: any) => ({
+    const parsed = products.map((pkg) => ({
       providerSlug: "holafly",
       name: pkg.name,
       dataMB: pkg.data_mb ?? pkg.dataAllowanceMB,
@@ -31,7 +50,9 @@ import prisma from "../src/lib/prisma";
       hotspotAllowed: pkg.hotspotAllowed ?? true,
       speedCapMbps: pkg.speedCapMbps ?? null,
       purchaseUrl: `https://www.holafly.com${pkg.slug || ""}`,
-      countries: (pkg.countries || []).map((c: any) => c.iso2?.toUpperCase()),
+      countries: (pkg.countries ?? [])
+        .map((c) => c.iso2?.toUpperCase())
+        .filter((c): c is string => Boolean(c)),
       slug: slugify(`holafly-${pkg.slug || pkg.name}`.trim(), { lower: true }),
     }));
 
