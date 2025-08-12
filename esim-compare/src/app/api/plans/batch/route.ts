@@ -4,6 +4,24 @@ import prisma from "@/lib/prisma";
 const ALLOWED_SORT_KEYS = ["pricePerGBUsd", "priceUsd", "validityDays"] as const;
 type SortKey = (typeof ALLOWED_SORT_KEYS)[number];
 
+export type PlanApiResponse = {
+  id: string;
+  provider: string;
+  name: string;
+  dataGB: number;
+  validityDays: number;
+  priceUsd: number;
+  pricePerGBUsd: number;
+  hotspotAllowed: boolean | null;
+  speedCapMbps: number | null;
+  purchaseUrl: string;
+  slug: string;
+};
+
+export type PlansByProvider = {
+  [providerName: string]: PlanApiResponse[];
+};
+
 export async function GET(req: NextRequest) {
   const countriesParam = req.nextUrl.searchParams.get("countries");
   const sortParam = req.nextUrl.searchParams.get("sort");
@@ -47,11 +65,11 @@ export async function GET(req: NextRequest) {
     orderBy: { [sort]: "asc" as const },
   });
 
-  const result: Record<string, Record<string, any[]>> = {};
+  const result: { [countryId: string]: PlansByProvider } = {};
   const countrySet = new Set(countries);
 
   for (const p of plans) {
-    const planObj = {
+    const planObj: PlanApiResponse = {
       id: p.id,
       provider: p.provider.name,
       name: p.name,
