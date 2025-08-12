@@ -3,6 +3,31 @@ import * as cheerio from "cheerio";
 import slugify from "slugify";
 import prisma from "../src/lib/prisma";
 
+interface NomadCountry {
+  iso2?: string;
+}
+
+interface NomadProduct {
+  name: string;
+  data_mb?: number;
+  dataAllowanceMB?: number;
+  validity_days?: number;
+  validityDays?: number;
+  price?: string;
+  priceAmount?: string;
+  currency?: string;
+  hotspotAllowed?: boolean;
+  speedCapMbps?: number | null;
+  url?: string;
+  slug?: string;
+  countries?: NomadCountry[];
+}
+
+interface NomadData {
+  props?: { pageProps?: { products: NomadProduct[] } };
+  products?: NomadProduct[];
+}
+
 (async () => {
   let browser;
   try {
@@ -16,16 +41,20 @@ import prisma from "../src/lib/prisma";
     const html = await page.content();
 
     const $ = cheerio.load(html);
-    let data: any = null;
+    let data: NomadData | null = null;
     const nextData = $("#__NEXT_DATA__").html();
     if (nextData) {
-      data = JSON.parse(nextData);
+      data = JSON.parse(nextData) as NomadData;
     } else {
-      data = await page.evaluate(() => (window as any).__NOMAD_DATA__ || null);
+      data = (await page.evaluate(
+        () =>
+          (window as unknown as { __NOMAD_DATA__?: unknown }).__NOMAD_DATA__ ?? null
+      )) as NomadData | null;
     }
-    const products = data?.props?.pageProps?.products || data?.products || [];
+    const products: NomadProduct[] =
+      data?.props?.pageProps?.products || data?.products || [];
 
-    const parsed = products.map((pkg: any) => ({
+    const parsed = products.map((pkg) => ({
       providerSlug: "nomad",
       name: pkg.name,
       dataMB: pkg.data_mb ?? pkg.dataAllowanceMB,
@@ -35,7 +64,9 @@ import prisma from "../src/lib/prisma";
       hotspotAllowed: pkg.hotspotAllowed ?? true,
       speedCapMbps: pkg.speedCapMbps ?? null,
       purchaseUrl: pkg.url || `https://getnomad.app/${pkg.slug || ""}`,
-      countries: (pkg.countries || []).map((c: any) => c.iso2?.toUpperCase()),
+      countries: (pkg.countries ?? [])
+        .map((c) => c.iso2?.toUpperCase())
+        .filter((c): c is string => Boolean(c)),
       slug: slugify(`nomad-${pkg.slug || pkg.name}`.trim(), { lower: true }),
     }));
 
