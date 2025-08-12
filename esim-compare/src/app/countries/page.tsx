@@ -15,9 +15,9 @@ async function getPlans(iso2: string): Promise<Plan[]> {
 export default async function CountriesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ list?: string }>;
+  searchParams: { list?: string };
 }) {
-  const { list = "" } = await searchParams;
+  const { list = "" } = searchParams;
   const codes = list
     .split(",")
     .map((c) => c.trim().toUpperCase())

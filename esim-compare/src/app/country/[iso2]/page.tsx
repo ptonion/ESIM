@@ -20,11 +20,11 @@ export default async function CountryPage({
   params,
   searchParams,
 }: {
-  params: Promise<{ iso2: string }>;
-  searchParams: Promise<{ q?: string }>;
+  params: { iso2: string };
+  searchParams: { q?: string };
 }) {
-  const { iso2 } = await params;
-  const { q = "" } = await searchParams;
+  const { iso2 } = params;
+  const { q = "" } = searchParams;
   const plans = await getPlans(iso2.toUpperCase(), q);
 
   return (
