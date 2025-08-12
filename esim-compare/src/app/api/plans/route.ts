@@ -1,6 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
+export interface PlanApiResponse {
+  id: string;
+  provider: string;
+  name: string;
+  dataGB: number;
+  validityDays: number;
+  priceUsd: number;
+  pricePerGBUsd: number;
+  hotspotAllowed: boolean | null;
+  speedCapMbps: number | null;
+  purchaseUrl: string;
+  slug: string;
+}
+
 const ALLOWED_SORT_KEYS = ["pricePerGBUsd", "priceUsd", "validityDays"] as const;
 type SortKey = typeof ALLOWED_SORT_KEYS[number];
 
@@ -32,18 +46,19 @@ export async function GET(req: NextRequest) {
     orderBy: { [sort]: "asc" as const }
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return NextResponse.json(plans.map((p: any) => ({
-    id: p.id,
-    provider: p.provider.name,
-    name: p.name,
-    dataGB: Math.round((p.dataAllowanceMB/1024) * 10)/10,
-    validityDays: p.validityDays,
-    priceUsd: Number(p.priceUsd),
-    pricePerGBUsd: Number(p.pricePerGBUsd),
-    hotspotAllowed: p.hotspotAllowed,
-    speedCapMbps: p.speedCapMbps,
-    purchaseUrl: p.affiliateLink ?? p.purchaseUrl,
-    slug: p.slug
-  })));
+  return NextResponse.json<PlanApiResponse[]>(
+    plans.map((p): PlanApiResponse => ({
+      id: p.id,
+      provider: p.provider.name,
+      name: p.name,
+      dataGB: Math.round((p.dataAllowanceMB / 1024) * 10) / 10,
+      validityDays: p.validityDays,
+      priceUsd: Number(p.priceUsd),
+      pricePerGBUsd: Number(p.pricePerGBUsd),
+      hotspotAllowed: p.hotspotAllowed,
+      speedCapMbps: p.speedCapMbps,
+      purchaseUrl: p.affiliateLink ?? p.purchaseUrl,
+      slug: p.slug,
+    }))
+  );
 }
